@@ -1,0 +1,150 @@
+[project]
+name = "image-generator"
+version = "0.1.0"
+description = "Streamlit app for identity-preserving portrait generation with research-grade strategy comparison"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+
+dependencies = [
+    # UI
+    "streamlit>=1.40",
+    # Config + validation
+    "pydantic>=2.9",
+    "pydantic-settings>=2.6",
+    "python-dotenv>=1.0",
+    # Storage + DB
+    "duckdb>=1.1",
+    # Compute backends
+    "replicate>=1.0",
+    "fal-client>=0.5",
+    # HTTP + async
+    "httpx>=0.27",
+    "anyio>=4.6",
+    # Images
+    "pillow>=11.0",
+    # Logging
+    "structlog>=24.4",
+    # Data (for Experiments analytics page)
+    "polars>=1.14",
+]
+
+[project.optional-dependencies]
+# Heavy ML deps only needed for the real eval harness. Install with:
+#   uv sync --extra eval
+eval = [
+    "torch>=2.4",
+    "torchvision>=0.19",
+    "numpy>=2.0",
+    "onnxruntime>=1.20",
+    "insightface>=0.7",
+    "open-clip-torch>=2.30",
+    "lpips>=0.1.4",
+    "transformers>=4.46",
+]
+
+dev = [
+    "ruff>=0.7",
+    "mypy>=1.13",
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "pytest-cov>=6.0",
+    "types-Pillow>=10.2",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/image_generator"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "app", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W",      # pycodestyle
+    "F",           # pyflakes
+    "I",           # isort
+    "B",           # bugbear
+    "UP",          # pyupgrade
+    "SIM",         # simplify
+    "RUF",         # ruff-specific
+    "N",           # pep8-naming
+    "ASYNC",       # flake8-async
+    "PTH",         # use-pathlib
+    "TCH",         # type-checking imports
+]
+ignore = [
+    "E501",        # line length handled by formatter
+    "B008",        # FastAPI/Streamlit pattern: function-call defaults
+    "RUF001",      # ambiguous unicode in strings — × is intentional ("Strategy × Backbone")
+    "RUF002",      # ambiguous unicode in docstrings — same
+    "RUF003",      # ambiguous unicode in comments — same
+]
+
+[tool.ruff.lint.per-file-ignores]
+"app/**" = ["N999"]                                  # Streamlit page filenames use numeric prefixes
+"tests/**" = ["N802", "TC001", "TC003"]              # tests use fixtures + mocks at runtime
+"src/image_generator/models/**" = ["TC001", "TC003"] # Pydantic v2 needs types at runtime
+"src/image_generator/eval/base.py" = ["TC003"]       # dataclass fields likewise
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+files = ["src", "tests"]
+
+[[tool.mypy.overrides]]
+module = [
+    "replicate.*",
+    "fal_client.*",
+    "insightface.*",
+    "lpips.*",
+    "open_clip.*",
+    "streamlit.*",
+    # Heavy ML deps (eval extra) — ignore stubs even when uninstalled, so mypy
+    # works whether or not `make install-eval` has been run.
+    "torch.*",
+    "torchvision.*",
+    "transformers.*",
+    "cv2",
+    "PIL.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+pythonpath = ["src"]
+asyncio_mode = "auto"
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+]
+markers = [
+    "slow: marks tests as slow (skip with -m 'not slow')",
+    "integration: hits external APIs — requires credentials",
+]
+
+[tool.coverage.run]
+source = ["src/image_generator"]
+branch = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+]

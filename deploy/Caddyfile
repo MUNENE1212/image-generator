@@ -1,0 +1,40 @@
+# Caddy reverse proxy for image-generator.
+#
+# Caddy auto-fetches a Let's Encrypt cert for {$DOMAIN} on first request.
+# Make sure DNS for $DOMAIN points at this server BEFORE bringing the stack
+# up, otherwise the ACME challenge fails and you'll be rate-limited.
+#
+# DOMAIN env is supplied by docker-compose's env_file directive.
+
+{$DOMAIN} {
+    encode zstd gzip
+
+    # Long-lived WebSocket upgrade is required for Streamlit's live UI updates.
+    reverse_proxy app:8501 {
+        # Streamlit sends frequent heartbeats; bump the read timeout so idle
+        # browser tabs don't drop the connection.
+        transport http {
+            read_timeout 300s
+        }
+    }
+
+    # Basic security headers. The CSP is intentionally permissive for inline
+    # scripts because Streamlit ships an SPA bundle; tighten if you replace
+    # the front-end.
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options nosniff
+        Referrer-Policy strict-origin-when-cross-origin
+        # Streamlit injects iframe content when displaying images, so allow
+        # same-origin frames.
+        X-Frame-Options SAMEORIGIN
+        -Server
+    }
+
+    # Compress logs by default; debug-level only on demand.
+    log {
+        output stdout
+        format console
+        level INFO
+    }
+}

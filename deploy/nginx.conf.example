@@ -1,0 +1,36 @@
+# nginx reverse proxy for image-generator (paired with the systemd unit).
+#
+# Place at: /etc/nginx/sites-available/imggen
+# Symlink:  sudo ln -s /etc/nginx/sites-available/imggen /etc/nginx/sites-enabled/
+# TLS:      sudo certbot --nginx -d imggen.example.com
+#
+# Streamlit relies on long-lived WebSockets for UI streaming — the proxy_*
+# settings below are critical or pages will appear to "hang" mid-update.
+
+server {
+    listen 80;
+    server_name imggen.example.com;
+    # certbot rewrites this server block to 443 + adds SSL on first run.
+
+    client_max_body_size 50M;  # selfie uploads
+
+    location / {
+        proxy_pass http://127.0.0.1:8501;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # WebSocket upgrade for Streamlit's live updates.
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+
+        # Streamlit sends heartbeats every ~10s; keep the connection alive.
+        proxy_read_timeout 300s;
+        proxy_send_timeout 300s;
+
+        # Streamlit's static asset stream needs buffering off for low-latency UX.
+        proxy_buffering off;
+    }
+}

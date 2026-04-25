@@ -1,0 +1,26 @@
+# Streamlit theme + runtime config.
+# Lives at .streamlit/config.toml so Streamlit picks it up automatically.
+
+[theme]
+base = "dark"
+# Restrained palette — research tool aesthetic, not a SaaS landing page.
+primaryColor = "#7c5cff"          # violet — used for buttons + active states
+backgroundColor = "#0f1117"       # near-black, slightly warm
+secondaryBackgroundColor = "#1a1d24"  # cards / sidebar
+textColor = "#e6e6e6"
+font = "sans serif"
+
+[server]
+# Don't auto-open a browser — the user often runs this from a terminal
+# session and expects to alt-tab to an existing browser.
+headless = true
+# Generated images can be large; allow up to 50MB.
+maxUploadSize = 50
+
+[browser]
+gatherUsageStats = false
+
+[client]
+# Cleaner default — collapses long error tracebacks until clicked.
+showErrorDetails = false
+toolbarMode = "minimal"

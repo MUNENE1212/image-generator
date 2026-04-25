@@ -1,0 +1,66 @@
+# docker compose stack for VPS deployment.
+#
+#   app    — Streamlit, listens on 8501 (not exposed to host)
+#   caddy  — reverse proxy, automatic Let's Encrypt TLS, exposes 80/443
+#
+# First deploy:
+#   1. Set DOMAIN in .env (e.g. DOMAIN=imggen.example.com)
+#   2. Make sure DNS A record for $DOMAIN points at this VPS
+#   3. docker compose up -d --build
+#
+# Caddy fetches a real cert on first request to your domain.
+
+name: image-generator
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: image-generator:latest
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # Pin paths inside the container — these match the volume mount below.
+      IMGGEN_DATA_DIR: /app/data
+      IMGGEN_DB_PATH: /app/data/runs/runs.duckdb
+    volumes:
+      # Single named volume for all generated data + DB. Survives container
+      # rebuilds and updates.
+      - imggen-data:/app/data
+    expose:
+      - "8501"
+    networks:
+      - web
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8501/_stcore/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    env_file: .env  # for $DOMAIN substitution in Caddyfile
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"  # HTTP/3
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data       # Let's Encrypt certs persist here
+      - caddy-config:/config
+    networks:
+      - web
+    depends_on:
+      - app
+
+networks:
+  web:
+    driver: bridge
+
+volumes:
+  imggen-data:
+  caddy-data:
+  caddy-config:

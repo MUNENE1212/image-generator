@@ -1,0 +1,31 @@
+# Don't bake the venv, caches, or generated data into the image.
+.venv/
+.uv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Local data & secrets — never ship these in a layer.
+.env
+.env.*
+data/runs/*.duckdb*
+data/selfies/
+data/outputs/
+data/loras/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+
+# Docs that bloat the build context but aren't needed in the image
+deploy/
+*.md
+!README.md

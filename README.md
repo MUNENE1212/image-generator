@@ -94,3 +94,10 @@ async SDKs · `insightface` + `open-clip-torch` + `lpips` (eval extra) ·
 10-day plan: complete through Day 9 (about polish). Day 10 is deploy + blog post.
 The full design history and architectural decisions are in
 [CLAUDE.md](CLAUDE.md).
+
+## Further reading
+
+- [`docs/article.md`](docs/article.md) — *From novelty to infrastructure: where
+  image generation actually is in 2026* — a stakeholder-oriented field guide
+  covering the state of the art, trends, challenges, and business / investment
+  angles. Uses this repo as the lens.

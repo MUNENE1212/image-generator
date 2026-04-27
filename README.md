@@ -101,3 +101,8 @@ The full design history and architectural decisions are in
   image generation actually is in 2026* — a stakeholder-oriented field guide
   covering the state of the art, trends, challenges, and business / investment
   angles. Uses this repo as the lens.
+- [`docs/architecture-deep-dive.md`](docs/architecture-deep-dive.md) — engineer-
+  focused companion: the seven decisions worth defending, the four bugs we hit
+  during the build (and what they taught), Mermaid diagrams of the system + the
+  schema + the Strategy Lab streaming sequence, and a what-I'd-do-differently
+  closer.
